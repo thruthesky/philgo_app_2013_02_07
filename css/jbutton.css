@@ -1,0 +1,161 @@
+/**
+	 * 예)
+	 * <div class="jbutton-group">
+	 * <a class="jbutton blue-active" href="#">TEXT</a>
+	 * </div>
+	 * 
+	 * 
+	 */
+.jbutton {
+	line-height: 17px;
+	border: 1px solid #d7d7d7;
+	padding: 5px 10px 5px 10px;
+	font-size: 9pt;
+	background-color: #f9f9f9;
+	color: black;
+	font-family: Helvetica,Tahoma,Verdana;
+}
+
+.jbutton:hover {
+	color: blue;
+	background-color: white;
+	cursor: pointer;
+}
+
+.jbutton-group {
+	margin: 1px 0px 1px 0px;
+}
+
+.jbutton-group .jbutton {
+	float:left;
+	border-left: 0px;
+}
+
+.jbutton-group :first-child {
+	border-left: 1px solid #dfdfdf;
+	border-top-left-radius: 3px;
+	border-bottom-left-radius: 3px;
+}
+
+.jbutton-group :last-child {
+	border-top-right-radius: 3px;
+	border-bottom-right-radius: 3px;
+}
+
+.jbutton-group:after {
+	display:block;
+	content:'';
+	clear:both;
+}
+
+
+
+
+/** 오렌지 컬러 */
+.jbutton-group .orange {
+	color: #ff8a00;
+	cursor: pointer;
+}
+.jbutton-group .orange:hover {
+	color: white;
+	background-color: orange;
+	border-color:orange;
+	cursor: pointer;
+}
+
+.jbutton-group .orange-active {
+	color: white;
+	background-color: orange;
+	border-color:orange;
+	cursor: pointer;
+}
+
+.jbutton-group .orange-active:hover {
+	color: orange;
+	background-color: white;
+	border-color:orange;
+	cursor: pointer;
+}
+
+
+/** 파랑 칼러 */
+.jbutton-group .blue {
+	color: blue;
+	cursor: pointer;
+}
+.jbutton-group .blue:hover {
+	color: white;
+	background-color: blue;
+	border-color:blue;
+	cursor: pointer;
+}
+
+.jbutton-group .blue-active {
+	color: white;
+	background-color: blue;
+	border-color:blue;
+	cursor: pointer;
+}
+
+.jbutton-group .blue-active:hover {
+	color: blue;
+	background-color: white;
+	border-color:blue;
+	cursor: pointer;
+}
+
+
+
+/** 빨강 컬러 */
+.jbutton-group .red {
+	color: red;
+	cursor: pointer;
+}
+.jbutton-group .red:hover {
+	color: white;
+	background-color: red;
+	border-color:red;
+	cursor: pointer;
+}
+
+.jbutton-group .red-active {
+	color: white;
+	background-color: red;
+	border-color:red;
+	cursor: pointer;
+}
+
+
+.jbutton-group .red-active:hover {
+	color: red;
+	background-color: white;
+	border-color:red;
+	cursor: pointer;
+}
+
+
+
+
+
+
+
+.jbutton-group .plus {
+	padding-left: 30px;
+	background: url('/sap_frame/icon/16/plus.png') no-repeat 8%;
+}
+
+.jbutton-group .setting {
+	padding-left: 30px;
+	background: url('/sap_frame/icon/16/settings.png') no-repeat 8%;
+}
+.jbutton-group .download {
+	padding-left: 30px;
+	background: url('/sap_frame/icon/16/communication.png') no-repeat 8%;
+}
+
+
+
+
+.jbutton-group a {
+	text-decoration: none;
+}

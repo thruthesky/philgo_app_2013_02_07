@@ -1,0 +1,1762 @@
+<!DOCTYPE html>
+<html>
+    <head>
+		<meta charset="utf-8"> 
+        <title>필고</title>
+		<meta name="description" content="필고 - 환상의 나라, 필리핀 정보 커뮤니티 포털 사이트 모바일 앱">
+		<meta name="HandheldFriendly" content="True">
+        <meta name="format-detection" content="telephone=no" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <script type="text/javascript" src="jquery-newest.min.js"></script>
+        <script type="text/javascript" src="cordova-2.3.0.js"></script>
+        <link rel="stylesheet" type="text/css" href="css/smoothness/jquery-ui-1.9.2.custom.min.css" />
+        <script type="text/javascript" src="jquery-ui-newest.min.js"></script>
+        <script type="text/javascript" src="iscroll.js"></script>
+        <script type="text/javascript" src="geolocation.js"></script>
+        <script type="text/javascript" src="default.js"></script>
+        <link rel="stylesheet" type="text/css" href="css/jbutton.css" />
+<script>
+var is_mobile = 0;
+var i_app = 0;
+var UserAgent = navigator.userAgent;
+if (UserAgent.match(/iPhone|iPod|Android|Windows CE|BlackBerry|Symbian|Windows Phone|webOS|Opera Mini|Opera Mobi|POLARIS|IEMobile|lgtelecom|nokia|SonyEricsson/i) != null || UserAgent.match(/LG|SAMSUNG|Samsung/) ) is_mobile = 1;
+
+
+
+/**
+ * 일반적인 노트북이나 데스크톱 컴퓨터를 통해서 웹 브라우저를 쓰고 있으면 참을 리턴한다.
+ */
+function isComputer()
+{
+	return ! is_mobile;
+}
+/**
+ * 모바일(앱 포함)을 이용해서 접속하면 참을 리턴한다.
+ */
+function isMobile()
+{
+	return is_mobile;
+}
+/**
+ * 앱이면 참을 리턴한다.
+ * 
+ * @중요: 앱인지 아닌지는 onDeviceReady() 가 호출되는지 안되는지에 따라서 결정된다. 따라서 이 값이 올바른 값 가지려면
+ * 앱이 실행되고 좀 기다려야한다.
+ * 따라서 특정 루틴에 앱에서만 실행되게 하려면 OnDeviceReady 를 활용하는 것이 좋다.
+ */
+function isApp()
+{
+	return i_app;
+}
+function isPhoneGap()
+{
+	return isApp();
+}
+</script>
+
+
+<style>
+* {
+	margin:0px;
+	padding:0px;
+	-webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+}
+body {
+	font-size:10pt;
+	-webkit-user-select:none;
+    -webkit-text-size-adjust:none;
+}
+
+.header_container {
+	height: 108px;
+}
+.header {
+
+	position:fixed;
+	z-Index: 99999;
+	width:100%;
+	top:0;
+	
+}
+.topmenu {
+	background-color: #ae0000;
+	padding: 10px;
+	color: white;
+}
+.icon-home {
+	vertical-align: -2px;
+}
+.search_form {
+	float:right;
+	width: 80%;
+}
+.search_box {
+	height: 26px;
+	border:1px solid #dfdfdf;
+	border-right: none;
+	background-color:white;
+	width: 100%;
+}
+.search_submit {
+	border: 1px solid #dfdfdf;
+	background-color: white;
+	height: 28px;
+	padding: 0px 4px 0px 4px;
+}
+
+
+.home {
+	padding-top: 6px;
+	cursor: pointer;
+	float:left;
+}
+
+</style>
+
+
+<script type="text/javascript">
+// Init
+/*****************************************************************************/
+var db;
+var i_internet_connected = 0;
+if ( isComputer() ) {
+	url_server = "http://philgo.org";
+}
+else {
+	url_server = "http://philgo.com";
+}
+var i_oriented = 0;
+var next_page = '';
+var load_target = null;
+
+
+
+
+
+/// Call onDeviceReady when Cordova is loaded.
+function onLoad() {
+/******************/
+	document.addEventListener("deviceready", onDeviceReady, false);
+}
+
+	
+function onDeviceReady() 
+/*****************************************************************************/
+{
+	i_app = 1;
+	
+	setMenuOption();
+	document.addEventListener("online", onOnline, false);
+	document.addEventListener("offline", onOffline, false);
+	document.addEventListener("backbutton", onBackKeyDown, false);
+	window.addEventListener("orientationchange", onOrientationChange, true);
+	
+	
+        pictureSource=navigator.camera.PictureSourceType;
+        destinationType=navigator.camera.DestinationType;
+        
+	
+	
+	initDevice();
+	initGeolocation();
+}
+function setMenuOption()
+{
+	if ( device.platform == 'Android' && device.version  == '2.3.6' ) {
+		$('.header').css('position', 'static');
+	}
+}
+/** Orientation 될 때 호출 된다.
+ *
+ */
+function onOrientationChange() {
+	///
+	
+		
+		
+	
+	
+}
+/// '백' 버튼을 더블 클릭하는지 확인.
+var DB_TAP_DELAY = 500;
+var TAB_COUNT = 0
+var TAB_TIMER = null;
+function onBackKeyDown()
+{
+/*************************/
+	TAB_COUNT ++;
+	/** 맨 처음 한번 클릭 된 경우, */
+	if ( TAB_COUNT == 1 ) {
+		TAB_TIMER = setTimeout(function(){
+			TAB_COUNT = 0;
+			onBackButtonClick();
+		}, DB_TAP_DELAY);
+	}
+	/** 더블 클릭 된 경우 */
+	else {
+		clearTimeout(TAB_TIMER);
+		TAB_COUNT = 0;
+		onBackButtonDoubleClick();
+	}
+}
+/** '백' 버튼 한번 클릭
+ *
+ */
+function onBackButtonClick()
+{
+	showPage('first_page');
+}
+/** '백' 버튼 두번 클릭
+ *
+ */
+function onBackButtonDoubleClick()
+{
+	//alert('db click');
+	navigator.app.exitApp();
+	//loadUrl("file:///android_asset/www/index.html", 500); 
+}
+
+    
+
+/**
+ * 인터넷에 연결된 상태이면 참을 리턴한다.
+ */
+function isOnline()
+/******************/
+{
+
+	
+	
+	/*
+    var networkState = navigator.connection.type;
+    var states = {};
+    states[Connection.UNKNOWN]  = 'Unknown connection';
+    states[Connection.ETHERNET] = 'Ethernet connection';
+    states[Connection.WIFI]     = 'WiFi connection';
+    states[Connection.CELL_2G]  = 'Cell 2G connection';
+    states[Connection.CELL_3G]  = 'Cell 3G connection';
+    states[Connection.CELL_4G]  = 'Cell 4G connection';
+    states[Connection.NONE]     = 'No network connection';
+    */
+
+	if ( typeof navigator.connection == 'undefined') {
+		return false;
+	}
+	if ( navigator.connection.type == Connection.NONE ) return false;
+	return true;
+}
+
+function onOnline()
+/*****************/
+{
+	initOnline();
+	i_internet_connected = 1;
+	on_load_data_for_first_page();
+	///showAlert("인터넷이 연결 되었습니다.");
+}
+function onOffline()
+/******************/
+{
+	uninit_first_page();
+	if ( i_internet_connected ) {
+		i_internet_connected = 0;
+		showAlert("인터넷이 끊겼습니다.");
+	}
+}
+/** 온라인이 될 때마다 이 함수가 실행된다.
+ * 
+ * @참고 이 함수는 한번만 실행되는 것이 아니라, 온라인이 될 때마다 실행이 된다.
+ */
+function initOnline()
+{
+	loadMapScripts();
+}
+
+
+    // alert dialog dismissed
+    function alertDismissed() {
+        // do something
+    }
+
+/** @breif Show a custom alertDismissed
+ *
+ */
+function showAlert(message) {
+/**************************/
+
+	if ( ! isPhoneGap() ) {
+		alert(message);
+		return;
+	}
+	navigator.notification.alert(
+		message,  // message
+		alertDismissed,         // callback
+		'필고',            // title
+		'확인'                  // buttonName
+	);
+}
+
+
+
+function checkConnection() {
+	if ( isOnline() ) {
+		i_internet_connected = 1;
+	}
+	else {
+		showAlert("인터넷에 연결하십시오.");
+		navigator.notification.vibrate(500);
+		i_internet_connected = 0;
+	}
+	return i_internet_connected;
+}
+
+/// 폰갭 내부 웹브라우저로 새창으로 홈페이지를 연다.
+function openWeb(url)
+{
+	if ( isApp() && ! isOnline() ) {
+		showAlert("인터넷을 연결하십시오.");
+		return;
+	}
+	var ref = window.open(url, '_blank', 'location=yes');
+}
+/** @breif 다른 웹 페이지로의 연결은 무조건 <div class='a' href='http://abc.com'>http://abc.com</div> 와 같이 연결해야 한다.
+ * 
+ *  
+ */
+$(function(){
+
+
+	$('.a').live("click", function(){
+		href = $(this).attr('href');
+		openWeb( href );
+	});
+});
+	
+
+/** 스토리지 관련 함수.
+ * 
+ * 
+ */
+function config_set(k,v)
+{
+	window.localStorage.setItem(k,v);
+}
+function config_get(k)
+{
+	return window.localStorage.getItem(k);
+}
+function config_delete(k)
+{
+	window.localStorage.removeItem(k);
+}
+
+
+
+
+
+/** JSONP 관련 함수
+ *
+ */
+/// 콜백 함수. jsonp 의 경우 이렇게 정의를 해야한다.
+function mycallback(data)
+{
+	alert('mycallback');
+	alert(data);
+	// len =  data.length;
+	console.log( data );
+}
+
+$(function(){
+	/// 크로스 도메인을 받아 들이도록 하는 옵션.
+	$.ajaxPrefilter('json', function(options, orig, jqXHR) {
+		return 'jsonp';
+	});
+	//loadData("http://philgo.com/ip.php?input=abc-gogo");
+	//loadData("http://philgo.org/?cate=ajax&action=app&skin=N&category=org");
+});
+/**
+ *
+ 
+	@중요
+		리턴 된 값을 처리할 함수 callback 을 지정해야한다.
+		반드시 HTTP 입력 값으로 callback 을 지정해야한다. 그렇지 않으면 mycallback 이 호출된다.
+
+		예)
+		http://abc.com/?callback=insert_content
+	
+	
+	
+ */
+function loadData(url)
+/***********************/
+{
+	
+	$.ajax({
+        url: url,
+        crossDomain: true,
+        dataType: "json",
+        type: 'GET',
+        success: function(re) {
+        	alert('success code. no callback');
+			alert(re);
+		},
+		error: function( jqXHR, textStatus, errorThrown )
+        {
+			/// 파싱이 안된다는 에러는 무시한다. json 과 jsonp 의 리턴 값은 다소 틀리다.
+			///alert( textStatus + ", " + errorThrown );
+        }
+    });
+}
+
+$(function(){
+	$('.home').click(function(){
+		showPage('first_page');
+		init_first_page();
+		//goHome();
+	});
+});
+
+function goHome()
+{
+	
+	redirect('index.html');
+}
+
+function redirect(href)
+{
+	location.href=href;
+}
+
+/**
+ * 일반 웹 브라우저의 DOM 이 모두 출력되어 안전하게 자바스크립트를 사용해도 되는 상태. 즉, $(function(){}) 에서 호출된다.
+ * 
+ * 주의: 실제로 앱을 배포 할 때에는 아래에 있는 Device 전용 초기화 함수는 호출하지 않는다. 특히 인터넷 호출은 여기서 하지 않는다.  
+ */
+function onInit()
+/****************/
+{
+	// alert( 'DOM is ready' );
+	init_first_page();
+	
+	if ( isComputer() ) {
+		loadMapScripts();
+	}
+	
+}
+/**
+ * 모바일 디바이스가 동작 완료 상태이며 이것은 오직 앱만 체크 가능하다.
+ * 즉, 앱에서 DeviceReady 된 상태에서 이 함수가 호출된다.
+ * 
+ * 주의: 인터넷 액세스는 onDeviceReady 상태가 되어야만 한다. 따라서 모든 인터넷 액세스는 여기서 한다.
+ * 주의: 테스트를 할 때에는 onInit() 를 호출하지만,앱에서는 onInit() 를 사용하지 않는다. 
+ */
+function initDevice()
+{
+	
+	if ( isOnline() ) {
+		initOnline();
+	}
+
+	setTimeout(function(){
+		checkConnection();
+		},
+		4500);
+		
+	// alert( 'device ready' );
+	$('.shot').css('display', 'block');
+	if ( isOnline() ) {
+		init_first_page();
+	}
+	else {
+		$(".on_online").hide();
+	}
+	set_login();
+}
+
+function init_first_page()
+{
+	on_load_data_for_first_page();
+}
+function uninit_first_page()
+{
+	$(".on_online").hide();
+}
+
+
+function on_load_data_for_first_page()
+{
+	url = url_server + "/?cate=ajax&action=app_first_page&skin=N";
+	//alert(url);
+	loadData(url);
+	$(".on_online").show();
+	$(".post_issue").addClass("post_selected")
+}
+
+function on_ajax_callback_load_data_first_page(data)
+{
+	$(".promo .text").html(data.promo);
+	$(".post_all").html(data.post_all);
+	$(".post_issue").html(data.post_issue);
+	$(".post_freetalk").html(data.post_freetalk);
+	$(".post_qna").html(data.post_qna);
+	$(".post_wanted").html(data.post_wanted);
+	$(".post_buyandsell").html(data.post_buyandsell);
+	$(".post_cars").html(data.post_cars);
+}
+
+
+
+function ajax_load(href, target){
+		$.ajax({
+			url: href,
+			success: function(re) {
+				$('.'+target).html(re);
+			},
+			error: function(xhr) {
+				alert('Error!  Status = ' + xhr.status + "\r\n\r\nPlease notify this to your manager immediately.");
+			}
+		});
+	
+}
+
+</script>
+
+
+
+
+
+<style>
+.submenu {
+	background-color:#e4eaf0;
+}
+.submenu img {
+	margin: 2px;
+}
+
+.submenu_container {
+	height: 50px;
+	padding: 0px 0px 2px 0px;
+	width: 95%;
+	overflow:hidden;
+	margin:  0px 4px 0px 4px;
+	border: 1px solid transparent;
+	position:relative;
+	
+}
+
+.submenu_left_arrow {
+	padding: 14px 8px 14px 8px;
+	cursor:pointer;
+}
+.submenu_right_arrow {
+	padding: 14px 8px 14px 8px;
+	cursor:pointer;
+}
+
+
+.submenu_menus {
+	border: 1px solid transparent;
+	position:absolute;
+	width: 600px;
+	top:0px;
+	left:0px;
+}
+
+
+.submenu_menu {
+	font-size:9pt;
+	float:left;
+	width: 36px;
+	height: 38px;
+	overflow:hidden;
+	border: 2px solid transparent;
+	border-radius: 2px;
+	text-align:center;
+	cursor: pointer;
+	color: #797979;
+	margin: 0px 2px 0px 2px;
+	margin-top: 2px \0/IE8+9;
+	margin-bottom: 4px;
+	padding: 4px 8px 2px 8px;
+}
+
+.submenu_menu_selected {
+	border: 2px solid #c8d2e5;
+	background-color: #d8dfed;
+	color: black;
+}
+
+.submenu_menu_over {
+	border: 2px solid #dfdfdf;
+	background-color: #f3f3f3;
+	
+}
+
+</style>
+<script>
+
+/// Init Javascript
+$(function(){
+/****************/
+							
+	
+
+	
+	var submenuScroll = new iScroll('submenu_container', {vScroll:false, hScrollbar:false, vScrollbar:false});
+	
+	if ( isComputer() ) {
+		$('.submenu_menu').mouseenter(function(){
+			if ( $(this).hasClass('submenu_menu_selected') ) return;
+			$(this).addClass('submenu_menu_over');
+		});
+		$('.submenu_menu').mouseleave(function(){
+			$('.submenu_menu_over').removeClass('submenu_menu_over');
+		});
+	}
+	
+	$('.submenu_menu').click(function(){
+		if ( isComputer() ) {
+			$('.submenu_menu_over').removeClass('submenu_menu_over');
+		}
+		$('.submenu_menu_selected').removeClass('submenu_menu_selected');
+		$(this).addClass('submenu_menu_selected');
+		
+		
+		p = $(this).position();
+		left = - p.left;
+		container_width = $('.submenu_container').width();
+		wide_menu = container_width / 2;
+		item_width = $(this).width();
+		wide_item = item_width / 2;
+		
+		console.log('wide_menu:' + wide_menu);
+		pos = left + wide_menu - wide_item - 10;
+		setTimeout(function(){
+			submenuScroll.scrollTo(pos,0, 300) ;
+			},
+			300);
+		
+		
+		
+		type = $(this).attr('type');
+		if ( typeof type == 'undefined' ) return;
+		
+		if ( type == 'page' ) showPage( $(this).attr('page') );
+		if ( type == 'link' ) openWeb($(this).attr('href'));
+
+	});
+
+	
+	
+	$('.submenu_left_arrow').click(function(){
+		submenuScroll.scrollToElement("li:nth-child(" + 1 + ")", 500);
+	});
+	$('.submenu_right_arrow').click(function(){
+		max = $('.submenu_menus li').length;
+		max --;
+		submenuScroll.scrollToElement("li:nth-child("+max+")", 500);
+	});
+	
+
+	$('.submenu .shot, .reshot').click(function(){
+		capturePhotoEdit('camera');
+	});
+	$('.select_photo').click(function(){
+		capturePhotoEdit('');
+	});
+
+
+    
+	$('.upload_photo').click(function(){
+		if ( !isOnline() ) {
+			showAlert("인터넷에 연결하십시오.");
+			return;
+		}
+		$(".loading_upload").show('slow');
+		var options = new FileUploadOptions();
+		options.fileKey="file";
+		options.fileName=imageURI.substr(imageURI.lastIndexOf('/')+1);
+		options.mimeType="image/jpeg";
+		var params = {};
+		params.nickname = config_get('nickname');
+		params.post_id = $(".shot_post_id").val();
+		params.comment = $(".shot_comment").val();
+		options.params = params;
+		options.chunkedMode = false;
+		var ft = new FileTransfer();
+		ft.upload(imageURI, encodeURI("http://philgo.com/app_upload.php"), OnPhotoUploadSuccess, OnPhotoUploadFail, options);
+
+	});
+	
+	$('.form_shot_comment').submit(function(){
+		$('.upload_photo').click();
+		return false;
+	});
+	
+	
+	
+	/** Login
+	
+	 */
+	$('.form_login').submit(function(){
+		id = $(".form_login .id").val();
+		password =$(".form_login .password").val(); 
+		loadData(url_server + "/?cate=ajax&action=app_login&skin=N&id="+id+"&password="+password);
+		return false;
+	});
+ 
+	
+	onInit();
+	
+});
+
+
+
+
+
+/** Photo, Camera
+ * 
+ * 
+ * 
+ */
+ var imageURI;
+ function capturePhotoEdit(type) {
+ 
+ 	
+ 	if ( ! logged() ) {
+ 		showAlert("로그인을 먼저 하십시오.");
+ 		showPage("login_page");
+ 		next_page = "photo_shot_page";
+ 		return;
+ 	}
+ 	
+ 	if ( type == 'camera') {
+ 		navigator.camera.getPicture(onPhotoDataSuccess, onFail, {
+ 			quality: 60,
+      		allowEdit: true,
+      		destinationType: navigator.camera.DestinationType.FILE_URI
+        });
+ 	}
+ 	else {
+ 		navigator.camera.getPicture(onPhotoDataSuccess, onFail, {
+ 			quality: 60,
+      		allowEdit: true,
+      		destinationType: navigator.camera.DestinationType.FILE_URI,
+      		sourceType: navigator.camera.PictureSourceType.PHOTOLIBRARY
+        });
+    }
+}
+    
+// Called when a photo is successfully retrieved
+//
+function onPhotoDataSuccess(URI) {
+  // Uncomment to view the base64 encoded image data
+  // console.log(imageData);
+
+
+  // Get image handle
+  //
+  $('.smallImage').css('display', 'block');
+  imageURI = URI;
+  $('.smallImage').prop('src', imageURI);
+}
+// Called if something bad happens.
+// 
+function onFail(message) {
+	$(".loading_upload").hide('slow');
+  	showAlert('실패: ' + message);
+}
+
+function OnPhotoUploadSuccess(r) {
+	$(".loading_upload").hide('slow');
+            console.log("Code = " + r.responseCode);
+            console.log("Response = " + r.response);
+            console.log("Sent = " + r.bytesSent);
+            ///alert(r.response);
+            showAlert("업로드 성공. 총 " + r.bytesSent + "바이트가 전송되었습니다.");
+            openWeb("http://n.philgo.com/?lifeshot");
+            $('.smallImage').css('display', 'none');
+            $('.shot_comment').val('');
+        }
+ 
+function OnPhotoUploadFail(error) {
+    showAlert("에러: Code = " + error.code);
+}
+    
+
+$(function(){
+	$(".search_form").submit(function(){
+		key = $(".search_box").val();
+		url = "http://n.philgo.com/?cate=post&action=search&search_field=title&key=" + key;
+		openWeb( url );
+		return false;
+
+	});
+	
+	$(".company_book").click(function(){
+		loadCompanyBook('company_book_content');
+	});
+});
+
+
+</script>
+
+</head>
+<body onload="onLoad()">
+
+
+<div class='page'>
+<div class='header_container'>
+<div class='header'>
+	<div class='topmenu'>
+		<!-- top menu -->
+
+					<div class='home'>필고</div>
+					
+						<form class='search_form'>
+							
+						<table width='100%' border=0 cellpadding=0 cellspacing=0>
+							<tr>
+								<td><input name='key' class='search_box'></div></td>
+								<td width='36'><input class='search_submit' type='submit' value='검색'></td>
+							</tr>
+						</table>
+						</form>
+				
+	<div style='clear:both;'></div>
+	</div><!--/topmenu-->
+	<div style="height:1px;background-color:#990101"></div>
+	<div style="height:1px;background-color:#222324"></div>
+	<div style="height:1px;background-color:#57595b"></div>
+	<div style="height:1px;background-color:#9fa3a8"></div>
+	<div style="height:1px;background-color:#ced3d8"></div>
+	
+		
+
+
+		<!-- sub menu -->
+		<div class='submenu'>
+			<table width='100%' border=0>
+				<tr>
+					<td width='10'><div class='submenu_left_arrow'><img src="image/arrow_left.png"></div></td>
+					<td>
+							<div class='submenu_container' id='submenu_container'>
+								<ul class='submenu_menus'>
+									
+
+									<li class='submenu_menu login' type='page' page='login_page'>
+										<div class='icon'><img src="image/account.png"></div>
+										<div class='text'>로그인</div>
+									</li>
+									
+									
+									<li class='submenu_menu shot' type='page' page='photo_shot_page' style='display:none;'>
+										<div class='icon'><img src="image/image.png"></div>
+										<div class='text'>인증샷</div>
+									</li>
+
+
+									<li class='submenu_menu' type='link' href='http://n.philgo.com/?lifeshot'>
+										<div class='icon'><img src="image/bestseller.png"></div>
+										<div class='text'>라이프</div>
+									</li>
+									
+
+						
+									<li class='submenu_menu load_map' type='page' page='map_page'>
+										<div class='icon'><img src="image/collaboration.png"></div>
+										<div class='text'>길찾기</div>
+									</li>
+
+
+
+									<li class='submenu_menu company_book' type='page' page='company_book_page'>
+										<div class='icon'><img src="image/library.png"></div>
+										<div class='text'>업소록</div>
+									</li>
+									
+									
+									<li class='submenu_menu' type='link' href="http://n.philgo.com/?cate=index&action=forum_list">
+										<div class='icon'><img src="image/pencil.png"></div>
+										<div class='text'>게시판</div>
+									</li>
+									
+									<li class='submenu_menu' type='link' href="http://n.philgo.com/?news">
+										<div class='icon'><img src="image/library.png"></div>
+										<div class='text'>뉴스</div>
+									</li>
+									
+									<li class='submenu_menu' type='link' href="http://n.philgo.com/?database">
+										<div class='icon'><img src="image/library.png"></div>
+										<div class='text'>속보</div>
+									</li>
+									
+									
+									<li class='submenu_menu' type='link' href="http://philgo.com/">
+										<div class='icon'><img src="image/attibutes.png"></div><div class='text'>필고</div>
+									</li>
+						
+						
+									</ul>
+								</div><!--/submenu_container-->
+								
+					</td>
+					<td width='10'><div class='submenu_right_arrow'><img src="image/arrow_right.png"></div></td>
+				</tr>
+			</table>
+		</div><!--/submenu-->
+		
+	<div style="height:1px;background-color:#989898"></div>
+	<div style="height:1px;background-color:#dcdcdc"></div>
+	
+	
+	
+	
+		
+	
+	</div><!--/header-->
+	</div><!--header_container-->
+
+
+    
+
+
+
+<style>
+.map {
+	margin: 20px 0px 20px 0px;
+	text-align:center;
+}
+
+.menu_container {
+}
+.menu_container .menu {
+	margin: 2px;
+	border: 1px solid grey;
+	border-radius: 4px;
+	padding: 4px;
+	float: left;
+	text-align:center;
+	width: 68px;
+	height: 58px;
+	cursor: pointer;
+	font-size: 10pt;
+	
+	
+background: rgb(255,255,255); /* Old browsers */
+background: -moz-linear-gradient(top,  rgba(255,255,255,1) 0%, rgba(241,241,241,1) 61%, rgba(206,224,229,1) 98%, rgba(246,246,246,1) 100%); /* FF3.6+ */
+background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgba(255,255,255,1)), color-stop(61%,rgba(241,241,241,1)), color-stop(98%,rgba(206,224,229,1)), color-stop(100%,rgba(246,246,246,1))); /* Chrome,Safari4+ */
+background: -webkit-linear-gradient(top,  rgba(255,255,255,1) 0%,rgba(241,241,241,1) 61%,rgba(206,224,229,1) 98%,rgba(246,246,246,1) 100%); /* Chrome10+,Safari5.1+ */
+background: -o-linear-gradient(top,  rgba(255,255,255,1) 0%,rgba(241,241,241,1) 61%,rgba(206,224,229,1) 98%,rgba(246,246,246,1) 100%); /* Opera 11.10+ */
+background: -ms-linear-gradient(top,  rgba(255,255,255,1) 0%,rgba(241,241,241,1) 61%,rgba(206,224,229,1) 98%,rgba(246,246,246,1) 100%); /* IE10+ */
+background: linear-gradient(to bottom,  rgba(255,255,255,1) 0%,rgba(241,241,241,1) 61%,rgba(206,224,229,1) 98%,rgba(246,246,246,1) 100%); /* W3C */
+filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#ffffff', endColorstr='#f6f6f6',GradientType=0 ); /* IE6-9 */
+
+}
+.menu-container img {
+	margin-bottom: 6px;
+}
+
+
+.active_background {
+	background-color:blue;
+	color:orange;
+}
+
+.show_page {
+	display:block;
+}
+
+.hide_page {
+	display:none;
+}
+</style>
+<script>
+function on_ajax_callback_insert_content(data)
+{
+	//alert('insert_content');
+	//alert( data );
+	$('.company_page').html('');
+	len = data.length;
+	console.log( len );
+	
+	if ( len == 0 ) {
+		$('.company_page').html("<div class='no_banner'>등록된 업체 정보가 없습니다.</div>");
+	}
+	else {
+		for ( i = 0; i < len; i ++ ) {
+			$('.company_page').append( data[i] );
+		}
+	}
+	$('.company_page').append( "<div class='inquery a' href='http://www.philgo.com/res/img/adman.jpg'>업체 등록 문의 하기 [클릭]</div>" );
+	setTimeout(function(){
+		$('.ajax_loader').hide('slow');
+		}, 1200);
+}
+
+/** 로그인 관련 함수
+ * 
+ * 
+ */
+function on_ajax_callback_login(data)
+{
+	if ( data.login == 1 ) {
+	
+		config_set('id', data.id);
+		config_set('idx', data.idx);
+		config_set('nickname', data.nickname);
+		config_set('password', data.password);
+		config_set('level', data.level);
+		set_login();
+		showAlert("로그인 성공. " + data.nickname + " 회원님, 환영합니다.");
+		
+		if ( next_page ) showPage(next_page);
+		else showPage('first_page');
+	}
+	else {
+		showAlert("로그인 실패");
+	}
+}
+function logout()
+{
+	config_delete('idx');
+	config_delete('id');
+	config_delete('nickname');
+	config_delete('password');
+	config_delete('level');
+	showAlert("로그아웃을 하였습니다.");
+	redirect("index.html");
+}
+function logged()
+{
+	return config_get('idx');
+}
+function set_login()
+{
+	lv = config_get('level');
+	if ( lv ) {
+		$(".login .text").text("Lv. " + lv );
+	}
+	id = config_get('id');
+	$(".submenu .login").attr("page", 'login_info_page');
+}
+
+function insert_company_info(category)
+{
+	//loadData("http://philgo.org/?cate=ajax&action=app&skin=N&category=org");
+	// loadData("http://philgo.com/ip.php?input=abc-gogo&call");
+	///loadData("http://philgo.com/?cate=ajax&action=app&skin=N&category="+category);
+	
+	$('.ajax_loader').show('slow');
+	
+	loadData(url_server + "/?cate=ajax&action=app&skin=N&category="+category);
+	
+}
+
+
+/// Main Page
+///
+$(function(){
+/**********************************************************************************/
+
+	
+	$('.first_page').removeClass('hide_page').addClass('show_page');
+
+
+	/*
+	// TEST
+	
+	if ( isComputer() ) {
+		loadData(url_server + "/?cate=ajax&action=app&skin=N&category="+"약국");
+	}
+	else {
+		
+		loadData(url_server + "/?cate=ajax&action=app&skin=N&category="+"여행사");
+	}
+	showPage('company_page');
+	// END OF TEST */
+	
+	
+
+	
+	//
+	$('.menu_container .menu').click(function(){
+		showPage('company_page');
+		
+		//alert( $(this).attr('category') );
+		insert_company_info( $(this).attr('category') );
+	});
+});
+function showPage(class_name)
+{
+	
+	
+	if ( $(".show_page").hasClass("map_page") ) {
+		deInitGeolocation();
+	}
+	
+	
+	$('.show_page').removeClass('show_page').addClass('hide_page');
+	$('.ajax_loader').hide('slow');
+	$('.' + class_name).removeClass('hide_page').addClass('show_page');
+	
+	
+}
+</script>
+<style>
+
+.on_online{
+	display:none;
+}
+.company_page {
+}
+.company_page a {
+	text-decoration:none;
+}
+.company_page .post {
+	border: 1px solid #e3e3e3;
+	border-top:none;
+	margin: 0px 10px 0px 10px;
+	padding: 10px;
+	line-height: 130%;
+	
+background: rgb(255,255,255); /* Old browsers */
+background: -moz-linear-gradient(top,  rgba(255,255,255,1) 0%, rgba(244,244,244,1) 60%, rgba(241,241,241,1) 93%, rgba(246,246,246,1) 100%); /* FF3.6+ */
+background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgba(255,255,255,1)), color-stop(60%,rgba(244,244,244,1)), color-stop(93%,rgba(241,241,241,1)), color-stop(100%,rgba(246,246,246,1))); /* Chrome,Safari4+ */
+background: -webkit-linear-gradient(top,  rgba(255,255,255,1) 0%,rgba(244,244,244,1) 60%,rgba(241,241,241,1) 93%,rgba(246,246,246,1) 100%); /* Chrome10+,Safari5.1+ */
+background: -o-linear-gradient(top,  rgba(255,255,255,1) 0%,rgba(244,244,244,1) 60%,rgba(241,241,241,1) 93%,rgba(246,246,246,1) 100%); /* Opera 11.10+ */
+background: -ms-linear-gradient(top,  rgba(255,255,255,1) 0%,rgba(244,244,244,1) 60%,rgba(241,241,241,1) 93%,rgba(246,246,246,1) 100%); /* IE10+ */
+background: linear-gradient(to bottom,  rgba(255,255,255,1) 0%,rgba(244,244,244,1) 60%,rgba(241,241,241,1) 93%,rgba(246,246,246,1) 100%); /* W3C */
+filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#ffffff', endColorstr='#f6f6f6',GradientType=0 ); /* IE6-9 */
+
+	
+}
+.company_page .post:after {
+	clear:both;
+	display:block;
+	content: '';
+}
+.company_page .post_1 {
+	margin-top: 10px;
+	border-top: 1px solid #e3e3e3;
+}
+
+.company_page .post .photo {
+	width: 120px;
+	margin-right: 8px;
+	float:left;
+}
+.company_page .post .name {
+	margin-bottom: 4px;
+}
+.company_page .post .landline,
+.company_page .post .location,
+.company_page .post .address,
+.company_page .post .milestone {
+	margin-left: 122px;
+}
+
+.company_page .post .a {
+	cursor: pointer;
+}
+
+.no_banner {
+	font-size: 12pt;
+	margin: 10px;
+	padding: 10px;
+}
+
+.inquery {
+	font-size: 12pt;
+	margin: 10px;
+	padding: 10px;
+	cursor: pointer;
+}
+.ajax_loader_container {
+	width: 80%;
+	margin: 0px auto;
+}
+.ajax_loader {
+	display:none;
+	padding: 10px;
+}
+.ajax_loader img {
+	vertical-align: -10px;
+	margin-right: 10px;
+}
+.menu_container {
+	margin:10px auto;
+}
+</style>
+<script>
+$(function(){
+	// 동적 중앙 정렬
+	// 첫 페이지 메뉴 내용을 동적으로 중앙에 놓는다.
+	var op = 0;
+	var op_back = 0;
+	var done_each = 0;
+	$('.menu_container .menu').each (function(index){
+		if ( done_each ) return;
+		p = $(this).position();
+		op = p.left;
+			if ( op < op_back ) {
+				done_each = 1;
+				op_back += $(this).width() + 16;
+				//alert(op_back);
+				$('.menu_container').css("width", op_back);
+				return;
+			}
+		op_back = op;		
+	});
+});
+</script>
+<style>
+.first_page .posts .post {
+	padding: 10px;
+	border-bottom: 1px solid grey;
+}
+.promo {
+	padding: 8px;
+}
+.promo .text {
+	height: 14px;
+	overflow:hidden;
+}
+.tabs_container {
+	height: 38px;
+	overflow:hidden;
+}
+.tabs {
+	height: 32px;
+	padding-left: 10px;
+	position:relative;
+	margin: 4px 0px 0px 0px;
+	border-top: 1px solid #d9d9d9;
+	border-bottom: 1px solid #b9b9b9;
+	
+	
+	
+background: rgb(246,248,249); /* Old browsers */
+background: -moz-linear-gradient(top,  rgba(246,248,249,1) 0%, rgba(243,243,243,1) 52%, rgba(227,227,227,1) 96%, rgba(245,247,249,1) 100%); /* FF3.6+ */
+background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgba(246,248,249,1)), color-stop(52%,rgba(243,243,243,1)), color-stop(96%,rgba(227,227,227,1)), color-stop(100%,rgba(245,247,249,1))); /* Chrome,Safari4+ */
+background: -webkit-linear-gradient(top,  rgba(246,248,249,1) 0%,rgba(243,243,243,1) 52%,rgba(227,227,227,1) 96%,rgba(245,247,249,1) 100%); /* Chrome10+,Safari5.1+ */
+background: -o-linear-gradient(top,  rgba(246,248,249,1) 0%,rgba(243,243,243,1) 52%,rgba(227,227,227,1) 96%,rgba(245,247,249,1) 100%); /* Opera 11.10+ */
+background: -ms-linear-gradient(top,  rgba(246,248,249,1) 0%,rgba(243,243,243,1) 52%,rgba(227,227,227,1) 96%,rgba(245,247,249,1) 100%); /* IE10+ */
+background: linear-gradient(to bottom,  rgba(246,248,249,1) 0%,rgba(243,243,243,1) 52%,rgba(227,227,227,1) 96%,rgba(245,247,249,1) 100%); /* W3C */
+filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#f6f8f9', endColorstr='#f5f7f9',GradientType=0 ); /* IE6-9 */
+
+}
+.tab_menu {
+	float: left;
+	margin: 4px 0px 0px 0px;
+	height: 28px;
+	border: 1px solid transparent;
+	cursor:pointer;
+}
+.tab_menu:hover {
+	color: #d50000;
+}
+.tab_menu .text {
+	font-size: 12pt;
+	font-family: '다음',Daum,'나눔고딕',NanumGothic,'맑은 고딕','Malgun Gothic','돋움',Dotum,'굴림',Gulim,Helvetica,sans-serif;
+	padding: 4px 10px 0px 10px;
+}
+.tab_selected {
+	color: blue;
+	background-color:white;
+	border-top: 1px solid #c9c9c9;
+	border-left: 1px solid #c9c9c9;
+	border-right: 1px solid #c9c9c9;
+	border-top-left-radius: 3px;
+	border-top-right-radius: 3px;
+}
+
+.first_page_posts .post {
+	height: 26px;
+	cursor:pointer;
+	overflow:hidden;
+	border-bottom: 1px solid #dfdfdf;
+	
+
+background: rgb(255,255,255); /* Old browsers */
+background: -moz-linear-gradient(top,  rgba(255,255,255,1) 0%, rgba(246,246,246,1) 57%, rgba(233,233,233,1) 90%, rgba(255,255,255,1) 100%); /* FF3.6+ */
+background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgba(255,255,255,1)), color-stop(57%,rgba(246,246,246,1)), color-stop(90%,rgba(233,233,233,1)), color-stop(100%,rgba(255,255,255,1))); /* Chrome,Safari4+ */
+background: -webkit-linear-gradient(top,  rgba(255,255,255,1) 0%,rgba(246,246,246,1) 57%,rgba(233,233,233,1) 90%,rgba(255,255,255,1) 100%); /* Chrome10+,Safari5.1+ */
+background: -o-linear-gradient(top,  rgba(255,255,255,1) 0%,rgba(246,246,246,1) 57%,rgba(233,233,233,1) 90%,rgba(255,255,255,1) 100%); /* Opera 11.10+ */
+background: -ms-linear-gradient(top,  rgba(255,255,255,1) 0%,rgba(246,246,246,1) 57%,rgba(233,233,233,1) 90%,rgba(255,255,255,1) 100%); /* IE10+ */
+background: linear-gradient(to bottom,  rgba(255,255,255,1) 0%,rgba(246,246,246,1) 57%,rgba(233,233,233,1) 90%,rgba(255,255,255,1) 100%); /* W3C */
+filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#ffffff', endColorstr='#ffffff',GradientType=0 ); /* IE6-9 */
+
+}
+.first_page_posts .post .text {
+	padding: 6px;
+	height: 10px;
+	overflow:hidden;
+}
+.first_page_posts .post .text a {
+	text-decoration:none;
+	color: black;
+}
+.first_page_posts_post {
+	display:none;
+}
+.post_selected {
+	display:block;
+}
+</style>
+<script>
+$(function(){
+	$(".tab_menu").click(function(){
+		$('.tab_selected').removeClass("tab_selected");
+		$(this).addClass('tab_selected');
+		pn = $(this).attr('post_name');
+		
+		$(".post_selected").removeClass("post_selected");
+		$("."+pn).addClass("post_selected");
+		
+		
+	});
+});
+</script>
+
+	<div class='ajax_loader_container'>
+		<div class='ajax_loader'><img src='image/loader.gif'> 업체 정보를 불러옵니다 ...</div>
+	</div>
+	
+<div class="content_container">
+<div class='content'>
+	<div style="height: 10px;">&nbsp;</div>
+	
+	
+	<!--------------------------------->
+	<div class='company_page hide_page'>
+	</div>
+	<!--------------------------------->
+	<!--/ company_page -->
+	
+	<!--------------------------------->
+	<div class='adinfo_page hide_page'>
+		<style>
+		.ad_content {
+			margin: 10px;
+			padding: 10px;
+			border: 1px solid #dfdfdf;
+			border-radius: 2px;
+			font-size: 12pt;
+			line-height: 160%;
+		}
+		.ad_content img {
+			margin-bottom: 10px;
+		}
+		</style>
+		<div class="ad_content">
+		<img src="image/philgo_ad.png">
+		
+		<br>
+		
+		미디어 파워 No. 1<br>
+		회원수: 62,000 명 (2013년 1월)<br>
+		일일 페이지 뷰 : 25 만<br>
+		월 누적 페이지 뷰 : 750 만<br>
+		<p>&nbsp;</p>
+
+		문의<br>
+		글로브 : 0915 - 913 - 7720<br>
+		스마트 : 0918 - 372 - 3051<br>
+		이메일 : philgoad@naver.com<br>
+		</div>
+	</div>
+	<!--------------------------------->
+	<!--/ company_page -->
+	
+	
+	<style>
+		.login_page .id, .login_page .password {
+			width: 160px;
+			height: 24px;
+			border: 1px solid #cdcdcd;
+		}
+		.login_page .jbutton {
+			width: 162px;
+			height: 34px;
+			padding: 8px;
+		}
+		.login_title {
+			margin: 20px 0px 16px 0px;
+			color: #454545;
+		}
+	</style>
+	<!--------------------------------->
+	<div class='login_page hide_page'>
+		<center>
+		<div class='login_title'>
+		환상의 나라 필리핀, 그 미지의 세계로 들어갑니다.
+		</div>
+		<form class="form_login">
+			<table>
+				<tr>
+					<td>아이디</td>
+					<td><input type="text" name="id" class='id' value=""></td>
+				</tr>
+				<tr height=6><td></td></tr>
+				<tr>
+					<td>비밀번호</td>
+					<td><input type="password" name="password" class='password' value=""></td>
+				</tr>
+				<tr height=6><td></td></tr>
+				<tr>
+					<td></td>
+					<td>
+						<div class="jbutton-group">
+						<input type="submit" value="로그인" class='jbutton'>
+						</div>
+					</td>
+				</tr>
+			</table>
+		</form>
+		</center>
+	</div>
+	<!--/ login_page -->
+	<!--------------------------------->
+	<div class='login_info_page hide_page'>
+		<center>
+			<div style="margin-top: 20px;">
+			<a href="javascript:logout();">로그 아웃</a>
+			</div>
+		</center>
+	</div>
+	<!--/ login_info_page -->
+	
+	
+	
+	<!--- map ------------------------------>
+<style>
+#map_canvas { width: 99%; height:400px; border: 2px solid #cdcdcd;}
+
+/** Mobile Style **/
+body, #gmap-4, .page { height:100%; }
+.ui-body-c a.ui-link { color: #008595; font-weight: bold; text-decoration: none; }
+.hidden { display:none; }
+.min-width-480px label.ui-input-text { font-weight:bold; display: block; }
+.adp-directions { width:100%; }
+.adp-placemark, .adp-summary, .adp-legal { display:none; margin: 0; }
+.adp-placemark, .adp-step, .adp-stepicon, .adp-substep{ border-top: none;text-align:center; vertical-align: middle; padding: 0.8em 0; background:#e9eaeb;color:#3e3e3e;text-shadow:0 1px 1px #fff;background-image:-moz-linear-gradient(top,#f0f0f0,#e9eaeb);background-image:-webkit-gradient(linear,left top,left bottom,color-stop(0,#f0f0f0),color-stop(1,#e9eaeb));-ms-filter:"progid:DXImageTransform.Microsoft.gradient(startColorStr='#f0f0f0', EndColorStr='#e9eaeb')"}
+.adp-directions tr { border:1px solid #b3b3b3; }
+h2 { font-size: 16px; overflow: hidden; white-space: nowrap; display: block; }
+.more { text-align: center; }
+.clear { clear:both; }
+#control { width:100%; background: #f4f4f4; opacity: 0.9}
+#control div { margin: 0em 0 1em 0; }
+#control input#places { width:95%; }
+
+.map_nav {
+	margin-bottom: 6px;
+}
+.map_region {
+	list-style:none;
+	padding:0px;
+	margin:0px;
+	font-size: 14pt;
+	font-weight: bold;
+}
+.map_region li {
+	float:left;
+	padding: 4px 6px 4px 6px;
+	margin: 2px;
+	border: 0px;
+	border-bottom: 1px solid grey;
+}
+.map_region a {
+	text-decoration:none;
+	color: black;
+}
+</style>
+<script>
+function loadCompanyBook(target)
+{
+	load_target = target;
+	url = url_server + "/?cate=ajax&action=app_company_book&skin=N";
+	loadData(url);
+}
+
+function on_ajax_callback_load_company_book(data)
+{
+	///alert(data.html);
+	$("."+load_target).html(data.html);
+}
+
+$(function(){
+	$(".company_list_item").live("click", function() {
+		lat = $(this).attr('latitude');
+		lon = $(this).attr('longitude');
+		v = lat+","+lon;
+		drawMap(v);
+	});
+	$(".city").live("change", function(){
+		form_submit_company_book_search();
+	});
+	$(".order").live("change", function(){
+		form_submit_company_book_search();
+	});
+	$(".form_company_book_search").live("submit", function(){
+		form_submit_company_book_search();
+		return false;
+	});
+});
+function form_submit_company_book_search()
+{
+
+	load_target = 'company_list';
+	city = $(".city").val();
+	order = $(".order").val();
+	key = $(".key").val();
+	if ( typeof key == 'undefined' ) key = '';
+	url = url_server + "/?cate=ajax&action=app_company_book&skin=N&form=N&city="+city+"&order="+order+"&key="+key;
+	loadData(url);
+}
+
+function openCompanyBook()
+{
+	showPage("company_book_page");
+	loadCompanyBook('company_book_content');
+}
+
+
+</script>
+	<div class='map_page hide_page'>
+	
+		<div class="map_nav">
+			<ul class='map_region'>
+				<li><a href="javascript:openCompanyBook();">업소 검색</a></li>
+				<li><a href="javascript:drawMap('14.599512,120.98421');">마닐라</a></li> 
+				<li><a href="javascript:drawMap('10.332145,123.952732');">세부</a></li> 
+				<li><a href="javascript:drawMap('15.144985,120.588703');">앙헬레스</a></li> 
+				<li><a href="javascript:drawMap('10.721165,122.566395');">일로일로</a></li>
+				<li><a href="javascript:drawMap('16.40233,120.596023');">바기오</a></li> 
+				<li><a href="javascript:drawMap('7.190826,125.455627');">다바오</a>
+			</ul>
+			<div style='clear:both;'></div>
+		</div>
+		<div class="map_company_book"></div>
+
+
+		<table width='100%' align='center'><tr><td align='center'>
+			
+			<div class="map_box">
+			<div id="map_canvas">
+				<div style='margin-top: 20px;'>
+				<img src="image/loader.gif" style="vertical-align:-10px;">
+				<span style="font-size: 14pt; font-weight: bold;">지도를 불러오는 중입니다.</span>
+				</div>
+				<div style='margin: 20px; line-height: 160%; text-align:left;'>
+					지도가 나타나지 않으면,
+					인터넷에 연결되었는지 확인하십시오.<br>
+					또는 인터넷을 연결하고 필고 앱을 종료 해다가 다시 실행해 보십시오.<br>
+					인터넷 속도가 느리면 지도가 늦게 나타 날 수 있습니다.<br>
+				</div>
+			</div>
+			</div>
+			
+		</td></tr></table>
+	</div>
+	
+	
+			
+	<!--/ map_page -->
+	
+	
+	<!------------------------------------>
+	<div class='photo_shot_page hide_page'>
+	
+		<style>
+			.shot_post_id {
+				margin-top: 10px;
+				width:80%;
+				height: 30px;
+			}
+		</style>
+		<center>
+		<img style="display:none;height:240px;" class="smallImage" src="" />
+
+
+		
+		<form class='form_shot_comment'>
+			<select name='post_id' class='shot_post_id'>
+				<option value='lifeshot'>인증샷 (라이프샷)</option>
+				<option value='freetalk'>자유토론</option>
+				<option value='qna'>질문과 답변</option>
+				<option value='knowhow'>경험담</option>
+				<option value='travel'>여행</option>
+				<option value='rest'>맛집</option>
+				<option value='party'>친구모임</option>
+				<option value='pds'>자료실</option>
+			</select>
+
+			<textarea name='shot_comment' class="shot_comment" style="width:80%; height: 60px; font-size: 12pt; margin-top: 10px; border: 1px solid #cdcdcd; border-radius:2px;"></textarea>
+		</form>		
+		
+
+	<div class="loading_upload" style="display:none;">
+		<img src='image/loader4.gif'> 사진을 업로드 중입니다.
+	</div>
+	
+		<table><tr><td>
+		<div class='jbutton-group' style='margin: 10px 0px 20px 0px;'> 
+			<div class='photo_shot jbutton blue reshot'>사진 찍기 &nbsp; </div>
+			<div class='photo_shot jbutton blue select_photo'>사진 선택 &nbsp; </div>
+			<div class='upload_photo jbutton orange-active'> &nbsp; 이미지 업로드</div>
+		</div></td></tr></table>
+		
+		주의: 사진이 눕혀 보이지 않게 방향을 올바로 찍어서 올리세요.
+		
+		</center>
+
+	</div>
+	<!--------------------------------->
+	<!--/ photo_shot_page -->
+	
+	
+	<!--------------------------------->
+	<style>
+.company_book_box {
+	margin: 4px;
+	border: 1px solid #cdcdcd;
+	padding: 10px;
+}
+.company_list {
+}
+.city {
+	width: 100px;
+}
+
+.company_list_item {
+	font-size: 12pt;
+	padding: 6px 4px 6px 4px;
+	cursor:pointer;
+}
+.company_name {
+	float:left;
+	padding-left: 20px;
+}
+.company_category {
+	float:left;
+	padding-left: 20px;
+	font-size: 9pt;
+	width: 80px;
+	color: blue;
+}
+.company_phone, .company_loc {
+	float:right;
+	padding-right: 20px;
+	font-size: 10pt;
+}
+</style>
+
+	<div class='company_book_page hide_page'>
+		<div class="company_book_content"></div>
+	</div>
+	<!--/ company_book_page -->
+	
+	
+	<div class='first_page hide_page'>
+
+		<div class="on_online">		
+		<div class='promo'><div class="text"></div></div>
+		
+		<div class='tabs_container'>
+		<div class='tabs'>
+			<div class='tab_menu' post_name='post_all'><div class='text'>전체</div></div>
+			<div class='tab_menu tab_selected' post_name='post_issue'><div class='text'>이슈</div></div>
+			<div class='tab_menu' post_name='post_freetalk'><div class='text'>자유</div></div>
+			<div class="tab_menu" post_name='post_qna'><div class='text'>질문</div></div>
+			<div class="tab_menu" post_name='post_wanted'><div class='text'>구인</div></div>
+			<div class="tab_menu" post_name='post_buyandsell'><div class='text'>장터</div></div>
+			<div class="tab_menu" post_name='post_cars'><div class='text'>중고차</div></div>
+			<div style='clear:both;'></div>
+		</div><!--/tabs-->
+		</div><!--/tabs_container-->
+		<div class="first_page_posts">
+			<div class='first_page_posts_post post_all'></div>
+			<div class='first_page_posts_post post_issue post_selected'></div>
+			<div class='first_page_posts_post post_freetalk'></div>
+			<div class='first_page_posts_post post_qna'></div>
+			<div class='first_page_posts_post post_wanted'></div>
+			<div class='first_page_posts_post post_buyandsell'></div>
+			<div class='first_page_posts_post post_cars'></div>
+		</div>
+		</div><!--/on_online-->
+		
+		<div class='menu_container'>
+			<div class='menu' category='TV/인터넷'><img src='image/network.png'><br>TV/인터넷</div>
+			<div class='menu' category='가전/전자'><img src='image/letter_closed.png'><br>가전/전자</div>
+			<div class='menu' category='건강식품'><img src='image/graph_bar_trend.png'><br>건강식품</div>
+			<div class='menu' category='골프/부킹'><img src='image/pause.png'><br>골프/부킹</div>
+			<div class='menu' category='교육시설'><img src='image/house.png'><br>교육시설</div>
+			<div class='menu' category='기타'><img src='image/medical_case.png'><br>기타</div>
+			<div class='menu' category='김치/반찬'><img src='image/pacman.png'><br>김치/반찬</div>
+			<div class='menu' category='레스토랑'><img src='image/credit_card.png'><br>레스토랑</div>
+			<div class='menu' category='렌트카'><img src='image/medical_case.png'><br>렌트카</div>
+			<div class='menu' category='리조트'><img src='image/globe.png'><br>리조트</div>
+			<div class='menu' category='마트/식품'><img src='image/globe.png'><br>마트/식품</div>
+			<div class='menu' category='망고'><img src='image/globe.png'><br>망고</div>
+			<div class='menu' category='방역/청소'><img src='image/globe.png'><br>방역/청소</div>
+			<div class='menu' category='병/의원'><img src='image/medical_case.png'><br>병/의원</div>
+			<div class='menu' category='부동산'><img src='image/bank.png'><br>부동산</div>
+			<div class='menu' category='뷰티/스킨'><img src='image/bank.png'><br>뷰티/스킨</div>
+			<div class='menu' category='안경점'><img src='image/alarm.png'><br>안경점</div>
+			<div class='menu' category='약국'><img src='image/clock.png'><br>약국</div>
+			<div class='menu' category='어학원'><img src='image/clapboard.png'><br>어학원</div>
+			<div class='menu' category='여행사'><img src='image/graph_bar.png'><br>여행사</div>
+			<div class='menu' category='은행/금융'><img src='image/heart.png'><br>은행/금융</div>
+			<div class='menu' category='이주/이민'><img src='image/minus.png'><br>이주/이민</div>
+			<div class='menu' category='인쇄/명함'><img src='image/pause.png'><br>인쇄/명함</div>
+			<div class='menu' category='인테리어'><img src='image/network.png'><br>인테리어</div>
+			<div class='menu' category='자동차관련'><img src='image/camera.png'><br>자동차관련</div>
+			<div class='menu' category='정수기렌탈'><img src='image/letter_closed.png'><br>정수기렌탈</div>
+			<div class='menu' category='종교시설'><img src='image/database.png'><br>종교시설</div>
+			<div class='menu' category='컴퓨터'><img src='image/photos_polaroid.png'><br>컴퓨터</div>
+			<div class='menu' category='통관운송이사'><img src='image/graph_bar.png'><br>통관운송</div>
+			<div class='menu' category='항공사'><img src='image/graph_bar.png'><br>항공사</div>
+			<div class='menu' category='호텔/숙박'><img src='image/graph_bar.png'><br>호텔/숙박</div>
+			<div style='clear:both;'></div>
+		</div>
+	</div><!--/first_page-->
+	
+</div><!--/content-->
+</div><!--/content_container-->
+
+
+<style>
+
+.copyright {
+	margin: 40px 0px 40px 0px;
+	padding: 10px 0px 0px 0px;
+	text-align:center;
+	border-top: 1px dotted #dfdfdf;
+}
+.copyright a {
+	color: black;
+	text-decoration:none;
+}
+
+</style>
+<div class='footer'>
+		<div class='copyright'>
+		
+			<div>
+			<a href="javascript:openWeb('http://m.philgo.com');" target='_blank'>필고 모바일</a> &nbsp; | &nbsp; 
+			<a href="javascript:showPage('adinfo_page');">광고 문의</a> &nbsp; | &nbsp; 
+			<a href="javascript:openWeb('http://n.philgo.com/?cate=post&action=write&id=request_to_manager');" target='_blank'>건의사항</a>
+			</div>
+			
+			
+
+		</div>
+		
+</div>
+<!--/footer-->
+</div><!--/page-->
+
+
+</body>
+</html>
